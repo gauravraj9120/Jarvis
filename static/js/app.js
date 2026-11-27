@@ -126,7 +126,65 @@ function initTopBarControls() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+async function initializeAuthentication() {
+  const gate = document.getElementById("authGate");
+  const form = document.getElementById("authForm");
+  const tokenInput = document.getElementById("authToken");
+  const error = document.getElementById("authError");
+  const signOutButton = document.getElementById("btnSignOut");
+
+  try {
+    const response = await fetch("/api/auth/status", { cache: "no-store" });
+    if (!response.ok) throw new Error("Authentication status request failed.");
+
+    const status = await response.json();
+    if (!status.required) return true;
+
+    if (status.authenticated) {
+      signOutButton?.classList.remove("hidden");
+      signOutButton?.addEventListener("click", async () => {
+        try {
+          const logout = await fetch("/api/auth/logout", { method: "POST" });
+          if (!logout.ok) throw new Error("Sign-out failed.");
+          window.location.reload();
+        } catch {
+          showToast("Unable to lock the session. Please try again.");
+        }
+      });
+      return true;
+    }
+  } catch {
+    if (error) error.textContent = "Could not reach the authentication service. Try again.";
+  }
+
+  gate?.classList.remove("hidden");
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (error) error.textContent = "";
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: tokenInput?.value || "" }),
+      });
+      if (!response.ok) {
+        if (error) error.textContent = "Invalid access token.";
+        tokenInput?.select();
+        return;
+      }
+      window.location.reload();
+    } catch {
+      if (error) error.textContent = "Unable to contact the authentication service.";
+    }
+  });
+  tokenInput?.focus();
+  return false;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  if (!(await initializeAuthentication())) return;
+
   initTopBarControls();
   initShortcuts();
   initVisualizerAndParticles();

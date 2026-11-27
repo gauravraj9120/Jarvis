@@ -56,6 +56,7 @@
       <div class="topbar-right">
         <canvas id="topWaveform" width="180" height="36" title="Audio Spectrum"></canvas>
         <div class="win-controls">
+          <button class="win-btn hidden" id="btnSignOut" title="Lock J.A.R.V.I.S. session" aria-label="Lock J.A.R.V.I.S. session">🔒</button>
           <button class="win-btn" id="btnVoiceToggle" title="Toggle Jarvis Voice Output">🔊</button>
           <button class="win-btn" id="btnFullscreen" title="Toggle Fullscreen">▢</button>
           <button class="win-btn" id="btnHelp" title="Command Help">?</button>
@@ -601,6 +602,19 @@
   </div>
 
   <div class="hud-toast hidden" id="hudToast"></div>
+
+  <div class="hud-auth-gate hidden" id="authGate" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="hud-auth-card hud-card">
+      <div class="card-header" id="authTitle">🔐 J.A.R.V.I.S. SECURE ACCESS</div>
+      <p class="muted-note">Enter the access token configured for this deployment.</p>
+      <form class="hud-auth-form" id="authForm">
+        <label for="authToken">Access token</label>
+        <input class="hud-input" id="authToken" type="password" autocomplete="current-password" required />
+        <button class="hud-btn" type="submit">Unlock HUD</button>
+        <p class="hud-auth-error" id="authError" role="alert" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
 
   <script type="module" src="/static/js/app.js"></script>
 </body>

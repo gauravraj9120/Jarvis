@@ -1498,6 +1498,40 @@ html, body {
   z-index: 60;
 }
 
+.hud-auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(1, 7, 18, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.hud-auth-card {
+  width: min(440px, 100%);
+  padding: 22px;
+  border: 1px solid rgba(0, 229, 255, 0.55);
+  box-shadow: var(--border-glow);
+}
+
+.hud-auth-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.hud-auth-form label {
+  color: var(--cyan-bright);
+  font-weight: 600;
+}
+
+.hud-auth-error {
+  min-height: 1.2em;
+  color: var(--danger);
+}
+
 .hidden {
   display: none !important;
 }

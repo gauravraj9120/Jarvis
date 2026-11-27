@@ -29,3 +29,11 @@ python run_jarvis.py
 ```
 
 Then open `http://127.0.0.1:8765` in your browser (Edge/Chrome recommended for Web Speech API voice recognition).
+
+## Render deployment
+
+1. Push this repository to GitHub.
+2. In Render, choose **New → Blueprint**, select this repository, and apply the `render.yaml` blueprint.
+3. After the service is live, open its URL and enter the generated `JARVIS_ACCESS_TOKEN` from the service's **Environment** settings.
+
+The blueprint builds from the repository root, starts Uvicorn on Render's assigned port, and generates a private access token. Keep that token in Render's environment settings; never commit it. The public page and Google verification file remain reachable, while API routes require the authenticated session. When deployed, operating-system tools run in the Render container rather than on the desktop. The free instance uses ephemeral storage, so notes, tasks, and settings saved at runtime can be lost when the service restarts or redeploys.

@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
+import os
+import secrets
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -46,13 +50,67 @@ STATIC_DIR = BASE_DIR / "static"
 
 app = FastAPI(title="J.A.R.V.I.S. HUD API", version="1.0.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+_AUTH_COOKIE = "jarvis_session"
+_AUTH_SESSION_TTL = 12 * 60 * 60
+_ACCESS_TOKEN = os.environ.get("JARVIS_ACCESS_TOKEN", "")
+_AUTH_REQUIRED = (
+    bool(_ACCESS_TOKEN)
+    or os.environ.get("JARVIS_REQUIRE_AUTH", "").strip().lower() in {"1", "true", "yes"}
+    or os.environ.get("RENDER", "").strip().lower() == "true"
 )
+
+if _AUTH_REQUIRED and len(_ACCESS_TOKEN) < 32:
+    raise RuntimeError(
+        "Set JARVIS_ACCESS_TOKEN to a random value of at least 32 characters before starting."
+    )
+
+
+def _create_auth_cookie() -> str:
+    issued_at = str(int(time.time()))
+    payload = f"{issued_at}.{secrets.token_urlsafe(24)}"
+    signature = hmac.new(_ACCESS_TOKEN.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    return f"{payload}.{signature}"
+
+
+def _is_valid_auth_cookie(value: str | None) -> bool:
+    if not value or not _ACCESS_TOKEN:
+        return False
+
+    try:
+        issued_at, nonce, signature = value.split(".", 2)
+        timestamp = int(issued_at)
+    except (ValueError, TypeError):
+        return False
+
+    now = int(time.time())
+    if timestamp > now or now - timestamp > _AUTH_SESSION_TTL:
+        return False
+
+    payload = f"{issued_at}.{nonce}"
+    expected = hmac.new(_ACCESS_TOKEN.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(signature, expected)
+
+
+@app.middleware("http")
+async def require_api_auth(request: Request, call_next) -> Response:
+    if _AUTH_REQUIRED and request.url.path.startswith("/api/"):
+        expected_origin = f"{request.url.scheme}://{request.url.netloc}"
+        origin = request.headers.get("origin")
+        if origin and origin.rstrip("/") != expected_origin:
+            return JSONResponse(status_code=403, content={"detail": "Cross-origin request rejected."})
+
+        public_paths = {
+            "/api/health",
+            "/api/auth/status",
+            "/api/auth/login",
+            "/api/auth/logout",
+        }
+        if request.url.path not in public_paths and not _is_valid_auth_cookie(
+            request.cookies.get(_AUTH_COOKIE)
+        ):
+            return JSONResponse(status_code=401, content={"detail": "Authentication required."})
+
+    return await call_next(request)
 
 
 # ---------- Pydantic Request Models ----------
@@ -111,6 +169,10 @@ class ConfigPatch(BaseModel):
     workspace_root: str | None = None
 
 
+class AuthToken(BaseModel):
+    token: str
+
+
 # ---------- Weather Helper ----------
 
 _WMO_DESCRIPTIONS = {
@@ -150,6 +212,45 @@ def _geocode_city(city_name: str) -> tuple[float, float] | None:
 @app.get("/api/health")
 def api_health() -> dict[str, Any]:
     return {"status": "online", "system": "J.A.R.V.I.S."}
+
+
+@app.get("/api/auth/status")
+def api_auth_status(request: Request) -> dict[str, bool]:
+    authenticated = not _AUTH_REQUIRED or _is_valid_auth_cookie(
+        request.cookies.get(_AUTH_COOKIE)
+    )
+    return {"required": _AUTH_REQUIRED, "authenticated": authenticated}
+
+
+@app.post("/api/auth/login")
+def api_auth_login(body: AuthToken, request: Request, response: Response) -> dict[str, bool]:
+    if not _AUTH_REQUIRED:
+        return {"authenticated": True}
+    if not hmac.compare_digest(body.token, _ACCESS_TOKEN):
+        raise HTTPException(status_code=401, detail="Invalid access token.")
+
+    response.set_cookie(
+        key=_AUTH_COOKIE,
+        value=_create_auth_cookie(),
+        max_age=_AUTH_SESSION_TTL,
+        httponly=True,
+        secure=request.url.scheme == "https" or os.environ.get("RENDER", "").lower() == "true",
+        samesite="strict",
+        path="/",
+    )
+    return {"authenticated": True}
+
+
+@app.post("/api/auth/logout")
+def api_auth_logout(request: Request, response: Response) -> dict[str, bool]:
+    response.delete_cookie(
+        key=_AUTH_COOKIE,
+        path="/",
+        httponly=True,
+        secure=request.url.scheme == "https" or os.environ.get("RENDER", "").lower() == "true",
+        samesite="strict",
+    )
+    return {"authenticated": False}
 
 
 @app.get("/api/telemetry")

@@ -177,8 +177,13 @@ def run_dev_command(command: str, mode: str = "shell") -> dict[str, Any]:
                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
         else:
+            shell_command = (
+                ["powershell", "-NoProfile", "-Command", cmd]
+                if sys.platform == "win32"
+                else ["/bin/sh", "-lc", cmd]
+            )
             proc = subprocess.run(
-                ["powershell", "-NoProfile", "-Command", cmd],
+                shell_command,
                 cwd=str(BASE_DIR),
                 capture_output=True,
                 text=True,

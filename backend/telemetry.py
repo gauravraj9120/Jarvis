@@ -1,4 +1,4 @@
-"""Real-time Windows telemetry using native Win32 APIs and standard library."""
+"""Cross-platform system telemetry, using Win32 APIs on Windows."""
 
 from __future__ import annotations
 
@@ -13,6 +13,8 @@ import threading
 import time
 from pathlib import Path
 from typing import Any
+
+import psutil
 
 _STATE_LOCK = threading.Lock()
 _PREV_CPU: tuple[int, int, int] | None = None
@@ -63,6 +65,9 @@ class _MIB_IFROW(ctypes.Structure):
 
 
 def _get_cpu_percent() -> float:
+    if os.name != "nt":
+        return round(psutil.cpu_percent(interval=0.1), 1)
+
     global _PREV_CPU
     idle, kernel, user = ctypes.c_uint64(), ctypes.c_uint64(), ctypes.c_uint64()
     if not ctypes.windll.kernel32.GetSystemTimes(
@@ -97,6 +102,14 @@ def _get_cpu_percent() -> float:
 
 
 def _get_memory_info() -> dict[str, Any]:
+    if os.name != "nt":
+        mem = psutil.virtual_memory()
+        return {
+            "percent": round(float(mem.percent), 1),
+            "used_gb": round(mem.used / (1024**3), 1),
+            "total_gb": round(mem.total / (1024**3), 1),
+        }
+
     mem = _MEMORYSTATUSEX()
     mem.dwLength = ctypes.sizeof(_MEMORYSTATUSEX)
     if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(mem)):
@@ -112,6 +125,17 @@ def _get_memory_info() -> dict[str, Any]:
 
 
 def _get_disk_info() -> dict[str, Any]:
+    if os.name != "nt":
+        root = Path(__file__).resolve().anchor or "/"
+        usage = shutil.disk_usage(root)
+        pct = (usage.used / usage.total) * 100.0 if usage.total else 0.0
+        return {
+            "drive": root,
+            "percent": round(pct, 1),
+            "used_gb": round(usage.used / (1024**3), 1),
+            "total_gb": round(usage.total / (1024**3), 1),
+        }
+
     drive = Path(__file__).resolve().drive or "C:"
     usage = shutil.disk_usage(f"{drive}\\")
     pct = (usage.used / usage.total) * 100.0 if usage.total else 0.0
@@ -124,6 +148,10 @@ def _get_disk_info() -> dict[str, Any]:
 
 
 def _read_network_octets() -> tuple[int, int]:
+    if os.name != "nt":
+        counters = psutil.net_io_counters()
+        return (counters.bytes_recv, counters.bytes_sent) if counters else (0, 0)
+
     sz = w.DWORD(0)
     ctypes.windll.iphlpapi.GetIfTable(None, ctypes.byref(sz), False)
     if sz.value == 0:
@@ -189,6 +217,9 @@ def _get_network_speed() -> dict[str, Any]:
 
 
 def _get_uptime_seconds() -> int:
+    if os.name != "nt":
+        return max(0, int(time.time() - psutil.boot_time()))
+
     ms = ctypes.windll.kernel32.GetTickCount64()
     return int(ms // 1000)
 
@@ -219,7 +250,38 @@ def get_system_snapshot() -> dict[str, Any]:
 
 
 def get_active_connections(limit: int = 30) -> list[dict[str, str]]:
-    """Return active TCP listening/established connections via netstat."""
+    """Return active TCP connections using the platform's available APIs."""
+    if os.name != "nt":
+        try:
+            connections = psutil.net_connections(kind="tcp")
+        except psutil.Error:
+            return []
+
+        rows: list[dict[str, str]] = []
+        for connection in connections:
+            local = (
+                f"{connection.laddr.ip}:{connection.laddr.port}"
+                if connection.laddr
+                else ""
+            )
+            remote = (
+                f"{connection.raddr.ip}:{connection.raddr.port}"
+                if connection.raddr
+                else ""
+            )
+            rows.append(
+                {
+                    "proto": "TCP",
+                    "local": local,
+                    "remote": remote,
+                    "state": connection.status,
+                    "pid": str(connection.pid or ""),
+                }
+            )
+            if len(rows) >= limit:
+                break
+        return rows
+
     try:
         out = subprocess.check_output(
             ["netstat", "-ano", "-p", "TCP"],
@@ -279,7 +341,30 @@ class _PROCESS_MEMORY_COUNTERS(ctypes.Structure):
 
 
 def get_top_processes(limit: int = 18) -> list[dict[str, Any]]:
-    """Return running processes sorted by working-set memory using Win32 Toolhelp API."""
+    """Return running processes sorted by memory usage."""
+    if os.name != "nt":
+        processes: list[dict[str, Any]] = []
+        for proc in psutil.process_iter(
+            attrs=["pid", "name", "num_threads", "memory_info"]
+        ):
+            try:
+                info = proc.info
+                memory = info["memory_info"]
+                processes.append(
+                    {
+                        "name": info["name"] or "Unknown",
+                        "pid": str(info["pid"]),
+                        "threads": info["num_threads"] or 0,
+                        "memory_mb": round(memory.rss / (1024.0 * 1024.0), 1)
+                        if memory
+                        else 0.0,
+                    }
+                )
+            except (psutil.Error, OSError):
+                continue
+        processes.sort(key=lambda proc: proc["memory_mb"], reverse=True)
+        return processes[:limit]
+
     TH32CS_SNAPPROCESS = 0x00000002
     PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
     PROCESS_VM_READ = 0x0010
