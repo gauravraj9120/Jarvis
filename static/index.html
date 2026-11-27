@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>J.A.R.V.I.S. — Futuristic Command HUD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/jarvis.css" />
+</head>
+<body>
+  <div class="hud-bg-grid"></div>
+  <div class="hud-bg-glow"></div>
+
+  <div class="hud-shell">
+    <!-- TOP BAR -->
+    <header class="hud-topbar">
+      <div class="brand-cluster">
+        <div class="brand-emblem" aria-hidden="true">
+          <svg viewBox="0 0 64 64" class="emblem-svg">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="3" opacity="0.85" />
+            <circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.65" />
+            <path d="M32 10 L46 50 L39 50 L35.5 39 L24 39 L20.5 50 L14 50 Z M26 33 L34 33 L30 20 Z" fill="currentColor" />
+            <path d="M22 36 L44 27 L41 33 L46 36 L25 40 Z" fill="#7cf3ff" opacity="0.95" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">J.A.R.V.I.S.</div>
+          <div class="brand-subtitle">Just A Rather Very Intelligent System</div>
+        </div>
+      </div>
+
+      <nav class="hud-nav" aria-label="Main Navigation">
+        <button class="nav-pill active" data-tab="home">
+          <span class="nav-ico">&#8962;</span> Home
+        </button>
+        <button class="nav-pill" data-tab="files">
+          <span class="nav-ico">&#128193;</span> Files
+        </button>
+        <button class="nav-pill" data-tab="tools">
+          <span class="nav-ico">&#128295;</span> Tools
+        </button>
+        <button class="nav-pill" data-tab="security">
+          <span class="nav-ico">&#128737;</span> Security
+        </button>
+        <button class="nav-pill" data-tab="developer">
+          <span class="nav-ico">&#9000;</span> Developer
+        </button>
+        <button class="nav-pill" data-tab="settings">
+          <span class="nav-ico">&#9881;</span> Settings
+        </button>
+      </nav>
+
+      <div class="topbar-right">
+        <canvas id="topWaveform" width="180" height="36" title="Audio Spectrum"></canvas>
+        <div class="win-controls">
+          <button class="win-btn" id="btnVoiceToggle" title="Toggle Jarvis Voice Output">🔊</button>
+          <button class="win-btn" id="btnFullscreen" title="Toggle Fullscreen">▢</button>
+          <button class="win-btn" id="btnHelp" title="Command Help">?</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="hud-main">
+      <!-- HOME DASHBOARD -->
+      <section class="tab-view active" id="view-home">
+        <div class="home-grid">
+          <!-- LEFT COLUMN -->
+          <div class="hud-col col-left">
+            <!-- Clock & Greeting -->
+            <div class="hud-card clock-card">
+              <div class="clock-time">
+                <span id="clockHMS">11:00:42</span>
+                <span id="clockAMPM" class="clock-ampm">AM</span>
+              </div>
+              <div id="clockDate" class="clock-date">Fri, 27 Nov 2026</div>
+            </div>
+
+            <div class="hud-card greeting-card">
+              <div class="greeting-bar"></div>
+              <div class="greeting-content">
+                <div id="greetingTitle" class="greeting-title">Good Afternoon, Gaurav Kumar!</div>
+                <div id="greetingSub" class="greeting-sub">Ready to assist you...</div>
+              </div>
+            </div>
+
+            <!-- SYSTEM STATUS -->
+            <div class="hud-card">
+              <div class="card-header">
+                <span class="card-pulse-ico">〰</span>
+                <span>SYSTEM STATUS</span>
+                <span class="card-meta" id="hostUptime">--</span>
+              </div>
+              <div class="gauges-row">
+                <div class="gauge-item">
+                  <svg class="ring-svg" viewBox="0 0 100 100">
+                    <circle class="ring-bg" cx="50" cy="50" r="40" />
+                    <circle class="ring-fg ring-cpu" id="ringCpu" cx="50" cy="50" r="40" />
+                  </svg>
+                  <div class="gauge-center">
+                    <span class="gauge-label">CPU</span>
+                    <span class="gauge-val" id="valCpu">0%</span>
+                  </div>
+                </div>
+                <div class="gauge-item">
+                  <svg class="ring-svg" viewBox="0 0 100 100">
+                    <circle class="ring-bg" cx="50" cy="50" r="40" />
+                    <circle class="ring-fg ring-ram" id="ringRam" cx="50" cy="50" r="40" />
+                  </svg>
+                  <div class="gauge-center">
+                    <span class="gauge-label">RAM</span>
+                    <span class="gauge-val" id="valRam">0%</span>
+                  </div>
+                </div>
+                <div class="gauge-item">
+                  <svg class="ring-svg" viewBox="0 0 100 100">
+                    <circle class="ring-bg" cx="50" cy="50" r="40" />
+                    <circle class="ring-fg ring-disk" id="ringDisk" cx="50" cy="50" r="40" />
+                  </svg>
+                  <div class="gauge-center">
+                    <span class="gauge-label">DISK</span>
+                    <span class="gauge-val" id="valDisk">0%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="status-subline" id="sysSubline">Scanning hardware telemetry...</div>
+            </div>
+
+            <!-- NETWORK -->
+            <div class="hud-card">
+              <div class="card-header">
+                <span class="card-pulse-ico">📡</span>
+                <span>NETWORK</span>
+                <span class="card-meta" id="hostNameMeta">LIVE</span>
+              </div>
+              <div class="network-body">
+                <div class="net-stats">
+                  <div class="net-row">
+                    <span class="net-arrow down">⬇</span>
+                    <span class="net-lbl">Download</span>
+                    <span class="net-val" id="netDown">0.0 Mbps</span>
+                  </div>
+                  <div class="net-row">
+                    <span class="net-arrow up">⬆</span>
+                    <span class="net-lbl">Upload</span>
+                    <span class="net-val" id="netUp">0.0 Mbps</span>
+                  </div>
+                </div>
+                <canvas id="networkSparkline" width="180" height="58"></canvas>
+              </div>
+            </div>
+
+            <!-- QUICK SHORTCUTS -->
+            <div class="hud-card shortcuts-card">
+              <div class="card-header">
+                <span class="card-pulse-ico">⚡</span>
+                <span>QUICK SHORTCUTS</span>
+              </div>
+              <div class="shortcuts-grid">
+                <button class="shortcut-tile" data-shortcut="vscode">
+                  <span class="sc-icon sc-vscode">&lt;/&gt;</span>
+                  <span class="sc-name">VS Code</span>
+                </button>
+                <button class="shortcut-tile" data-shortcut="browser">
+                  <span class="sc-icon sc-browser">🌐</span>
+                  <span class="sc-name">Browser</span>
+                </button>
+                <button class="shortcut-tile" data-shortcut="terminal">
+                  <span class="sc-icon sc-terminal">&gt;_</span>
+                  <span class="sc-name">Terminal</span>
+                </button>
+                <button class="shortcut-tile" data-shortcut="python">
+                  <span class="sc-icon sc-python">🐍</span>
+                  <span class="sc-name">Python</span>
+                </button>
+                <button class="shortcut-tile" data-shortcut="github">
+                  <span class="sc-icon sc-github">🐙</span>
+                  <span class="sc-name">GitHub</span>
+                </button>
+                <button class="shortcut-tile" data-tab-jump="settings">
+                  <span class="sc-icon sc-settings">⚙</span>
+                  <span class="sc-name">Settings</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CENTER HOLOGRAPHIC REACTOR -->
+          <div class="hud-col col-center">
+            <div class="reactor-stage">
+              <canvas id="reactorParticles" width="540" height="540"></canvas>
+              <div class="reactor-rings">
+                <svg viewBox="0 0 420 420" class="reactor-svg" id="reactorSvg">
+                  <defs>
+                    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.38" />
+                      <stop offset="65%" stop-color="#008cff" stop-opacity="0.14" />
+                      <stop offset="100%" stop-color="#001a33" stop-opacity="0" />
+                    </radialGradient>
+                  </defs>
+                  <circle cx="210" cy="210" r="195" fill="url(#coreGlow)" />
+                  <circle cx="210" cy="210" r="196" class="r-ring r-outer-thin" />
+                  <circle cx="210" cy="210" r="184" class="r-ring r-ticks spin-slow" />
+                  <circle cx="210" cy="210" r="168" class="r-ring r-arc-heavy spin-ccw" />
+                  <circle cx="210" cy="210" r="150" class="r-ring r-segments spin-cw" />
+                  <circle cx="210" cy="210" r="134" class="r-ring r-inner-glow" />
+                  <circle cx="210" cy="210" r="118" class="r-ring r-micro spin-slow" />
+                  <circle cx="210" cy="210" r="102" class="r-ring r-core-border" />
+                </svg>
+
+                <div class="reactor-core-text">
+                  <div class="reactor-title">J.A.R.V.I.S.</div>
+                  <div class="reactor-status" id="reactorStatus">
+                    <span class="status-dot"></span>
+                    <span id="reactorStatusText">ONLINE</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Holographic Pedestal -->
+              <div class="pedestal">
+                <div class="pedestal-beam"></div>
+                <div class="pedestal-ring ring-a"></div>
+                <div class="pedestal-ring ring-b"></div>
+                <div class="pedestal-ring ring-c"></div>
+              </div>
+
+              <!-- Integrated Command Bar -->
+              <form class="command-dock" id="commandForm">
+                <input
+                  type="text"
+                  id="commandInput"
+                  placeholder='Command J.A.R.V.I.S. (e.g., "System status", "Open VS Code", "Add task ...")'
+                  autocomplete="off"
+                />
+                <button type="submit" class="cmd-send-btn" title="Execute Command">EXECUTE</button>
+              </form>
+
+              <div class="quick-prompts">
+                <button type="button" class="prompt-chip" data-cmd="System status">System Status</button>
+                <button type="button" class="prompt-chip" data-cmd="Today's plan">Today's Plan</button>
+                <button type="button" class="prompt-chip" data-cmd="Tell me a joke">Tell a Joke</button>
+                <button type="button" class="prompt-chip" data-cmd="Open Terminal">Open Terminal</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN -->
+          <div class="hud-col col-right">
+            <!-- JARVIS ASSISTANT -->
+            <div class="hud-card assistant-card">
+              <div class="card-header">
+                <span class="card-pulse-ico">〰</span>
+                <span>JARVIS ASSISTANT</span>
+                <span class="card-meta" id="assistantModeBadge">READY</span>
+              </div>
+
+              <div class="assistant-hero">
+                <div class="helmet-reticle" id="helmetReticle">
+                  <svg viewBox="0 0 140 160" class="helmet-svg" aria-hidden="true">
+                    <circle cx="70" cy="80" r="64" class="reticle-ring" />
+                    <circle cx="70" cy="80" r="56" class="reticle-ring dashed" />
+                    <!-- Holographic Helmet Wireframe -->
+                    <path d="M44 40 Q70 22 96 40 L104 72 L98 118 Q70 136 42 118 L36 72 Z" class="helmet-outline" />
+                    <path d="M52 38 L58 66 L82 66 L88 38" class="helmet-line" />
+                    <path d="M42 74 L56 80 L84 80 L98 74" class="helmet-line" />
+                    <path d="M48 96 L60 112 L80 112 L92 96" class="helmet-line" />
+                    <path d="M62 118 L78 118" class="helmet-line" />
+                    <!-- Glowing Eyes -->
+                    <polygon points="46,72 63,75 61,82 47,79" class="helmet-eye" />
+                    <polygon points="94,72 77,75 79,82 93,79" class="helmet-eye" />
+                  </svg>
+                </div>
+
+                <div class="assistant-bubble" id="assistantBubble">
+                  <div class="bubble-lead" id="bubbleLead">
+                    Hello <span id="bubbleUserName">Gaurav Kumar</span>,<br />How can I help you today?
+                  </div>
+                  <ul class="bubble-caps" id="bubbleCaps">
+                    <li><span class="chk">✓</span> Search anything</li>
+                    <li><span class="chk">✓</span> Run commands</li>
+                    <li><span class="chk">✓</span> Open applications</li>
+                    <li><span class="chk">✓</span> Or just say "Hey Jarvis"</li>
+                  </ul>
+                  <div class="chat-feed hidden" id="chatFeed"></div>
+                </div>
+              </div>
+
+              <div class="mic-bar">
+                <button type="button" class="mic-btn" id="micBtn" title="Click to Speak">
+                  <svg viewBox="0 0 24 24" class="mic-svg">
+                    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a1 1 0 1 0-2 0 3 3 0 0 1-6 0 1 1 0 1 0-2 0 5 5 0 0 0 4 4.9V19H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.1A5 5 0 0 0 17 11z" fill="currentColor" />
+                  </svg>
+                </button>
+                <span class="mic-status" id="micStatus">Click Mic to speak...</span>
+                <button type="button" class="auto-pill-btn" id="btnAutoListen" title="Toggle Automatic 'Hey Jarvis' Listening">AUTO: OFF</button>
+                <button type="button" class="clear-chat-btn" id="btnResetChat" title="Show Intro">↺</button>
+              </div>
+            </div>
+
+            <!-- TODAY'S PLAN -->
+            <div class="hud-card plan-card">
+              <div class="card-header">
+                <span class="card-pulse-ico">📅</span>
+                <span>TODAY'S PLAN</span>
+                <button type="button" class="view-all-btn" id="btnOpenPlanModal">View All →</button>
+              </div>
+              <ul class="plan-list" id="planList"></ul>
+              <form class="quick-task-form" id="quickTaskForm">
+                <input type="text" id="quickTaskInput" placeholder="+ Add new mission or task..." />
+                <button type="submit">+</button>
+              </form>
+            </div>
+
+            <!-- QUICK INFO -->
+            <div class="hud-card info-card">
+              <div class="card-header">
+                <span class="card-pulse-ico">💡</span>
+                <span>QUICK INFO</span>
+              </div>
+              <div class="weather-row">
+                <div class="weather-main">
+                  <div class="weather-sun" id="weatherIcon">☀</div>
+                  <div>
+                    <div class="weather-temp" id="weatherTemp">22°C</div>
+                    <div class="weather-cond" id="weatherCond">Clear Sky</div>
+                  </div>
+                </div>
+                <div class="weather-loc">
+                  <span class="pin-ico">📍</span>
+                  <div>
+                    <div class="loc-city" id="locCity">Bhopal, MP</div>
+                    <div class="loc-country" id="locCountry">India</div>
+                  </div>
+                </div>
+              </div>
+              <div class="info-quote" id="infoQuote">— "Dream Big, Code Bigger..."</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FILES VIEW -->
+      <section class="tab-view" id="view-files">
+        <div class="panel-layout">
+          <div class="hud-card panel-full">
+            <div class="card-header">
+              <span class="card-pulse-ico">📁</span>
+              <span>HOLOGRAPHIC FILE EXPLORER</span>
+              <div class="header-actions">
+                <button class="hud-btn-sm" id="btnFilesUp">⬆ Parent</button>
+                <button class="hud-btn-sm" id="btnFilesRefresh">↻ Refresh</button>
+              </div>
+            </div>
+            <div class="files-path-bar">
+              <input type="text" id="filesPathInput" readonly />
+            </div>
+            <div class="files-split">
+              <div class="files-list-pane" id="filesList"></div>
+              <div class="files-preview-pane">
+                <div class="preview-header" id="filePreviewTitle">Select a file to inspect</div>
+                <pre class="preview-code" id="filePreviewContent">// File contents will render here...</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOOLS VIEW -->
+      <section class="tab-view" id="view-tools">
+        <div class="panel-grid-2">
+          <div class="hud-card">
+            <div class="card-header">
+              <span class="card-pulse-ico">📝</span>
+              <span>MISSION NOTES</span>
+              <button class="hud-btn-sm" id="btnNewNote">+ New Note</button>
+            </div>
+            <div class="notes-layout">
+              <div class="notes-list" id="notesList"></div>
+              <div class="note-editor">
+                <input type="hidden" id="noteEditId" />
+                <input type="text" id="noteTitleInput" placeholder="Note title..." class="hud-input" />
+                <textarea id="noteContentInput" rows="10" placeholder="Write encrypted field notes..." class="hud-textarea"></textarea>
+                <div class="btn-row">
+                  <button class="hud-btn" id="btnSaveNote">Save Note</button>
+                  <button class="hud-btn danger" id="btnDeleteNote">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-card">
+            <div class="card-header">
+              <span class="card-pulse-ico">⏱</span>
+              <span>CHRONO TIMER &amp; QUICK LAUNCHER</span>
+            </div>
+            <div class="timer-box">
+              <div class="timer-display" id="timerDisplay">25:00</div>
+              <div class="btn-row">
+                <button class="hud-btn" id="btnTimerStart">Start Focus (25m)</button>
+                <button class="hud-btn-sm" id="btnTimer5">5m Break</button>
+                <button class="hud-btn-sm" id="btnTimerReset">Reset</button>
+              </div>
+            </div>
+            <div class="sub-header">INSTANT SYSTEM APPS</div>
+            <div class="tools-launcher-grid">
+              <button class="hud-btn-sm" data-shortcut="vscode">VS Code</button>
+              <button class="hud-btn-sm" data-shortcut="terminal">Terminal</button>
+              <button class="hud-btn-sm" data-shortcut="python">Python REPL</button>
+              <button class="hud-btn-sm" data-shortcut="explorer">Windows Explorer</button>
+              <button class="hud-btn-sm" data-shortcut="notepad">Notepad</button>
+              <button class="hud-btn-sm" data-shortcut="calc">Calculator</button>
+            </div>
+            <div class="sub-header">WEB INTELLIGENCE SEARCH</div>
+            <form class="inline-form" id="toolSearchForm">
+              <input type="text" id="toolSearchInput" placeholder="Search documentation or web..." class="hud-input" />
+              <button type="submit" class="hud-btn">Search</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECURITY VIEW -->
+      <section class="tab-view" id="view-security">
+        <div class="panel-grid-2">
+          <div class="hud-card">
+            <div class="card-header">
+              <span class="card-pulse-ico">🛡</span>
+              <span>ACTIVE NETWORK PORTS &amp; PROCESSES</span>
+              <button class="hud-btn-sm" id="btnSecRefresh">↻ Scan</button>
+            </div>
+            <div class="sec-split">
+              <div class="sub-header">TCP CONNECTIONS (NETSTAT)</div>
+              <div class="hud-table-wrap">
+                <table class="hud-table" id="secConnectionsTable">
+                  <thead>
+                    <tr><th>Local</th><th>Remote</th><th>State</th><th>PID</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="sub-header">TOP MEMORY PROCESSES</div>
+              <div class="hud-table-wrap">
+                <table class="hud-table" id="secProcessesTable">
+                  <thead>
+                    <tr><th>Process</th><th>PID</th><th>RAM (MB)</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-card">
+            <div class="card-header">
+              <span class="card-pulse-ico">🔐</span>
+              <span>CRYPTO &amp; PASSWORD SUITE</span>
+            </div>
+            <div class="sub-header">CSPRNG PASSWORD GENERATOR</div>
+            <div class="inline-form">
+              <input type="number" id="pwdLenInput" value="18" min="8" max="64" class="hud-input small" />
+              <label class="hud-check"><input type="checkbox" id="pwdSymInput" checked /> Symbols</label>
+              <button type="button" class="hud-btn" id="btnGenPwd">Generate</button>
+            </div>
+            <div class="mono-output" id="pwdOutput">Click Generate for a cryptographic key...</div>
+
+            <div class="sub-header">HASH INSPECTOR (MD5 / SHA-1 / SHA-256 / SHA-512)</div>
+            <div class="inline-form">
+              <input type="text" id="hashInput" placeholder="Enter string to hash..." class="hud-input" />
+              <button type="button" class="hud-btn" id="btnComputeHash">Compute</button>
+            </div>
+            <pre class="mono-output tall" id="hashOutput">Hashes will appear here...</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- DEVELOPER VIEW -->
+      <section class="tab-view" id="view-developer">
+        <div class="panel-layout">
+          <div class="hud-card panel-full">
+            <div class="card-header">
+              <span class="card-pulse-ico">⌨</span>
+              <span>DEVELOPER COMMAND CONSOLE</span>
+              <div class="header-actions">
+                <select id="devModeSelect" class="hud-select">
+                  <option value="shell">PowerShell (Workspace)</option>
+                  <option value="python">Python 3.14 Inline</option>
+                </select>
+              </div>
+            </div>
+            <div class="dev-quick-cmds">
+              <button class="hud-btn-sm dev-preset" data-mode="shell" data-cmd="Get-ChildItem">List Workspace</button>
+              <button class="hud-btn-sm dev-preset" data-mode="shell" data-cmd="python --version; node --version">Runtime Versions</button>
+              <button class="hud-btn-sm dev-preset" data-mode="python" data-cmd="import sys, platform; print(sys.executable); print(platform.platform())">Python Env</button>
+              <button class="hud-btn-sm dev-preset" data-mode="shell" data-cmd="ipconfig | Select-String IPv4">Local IPv4</button>
+            </div>
+            <form class="inline-form" id="devExecForm">
+              <input type="text" id="devCmdInput" placeholder="Enter PowerShell command or Python code..." class="hud-input mono" />
+              <button type="submit" class="hud-btn">RUN</button>
+            </form>
+            <pre class="terminal-output" id="devOutput">J.A.R.V.I.S. Developer Terminal Ready in D:\Jarvis ...</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS VIEW -->
+      <section class="tab-view" id="view-settings">
+        <div class="panel-grid-2">
+          <div class="hud-card">
+            <div class="card-header">
+              <span class="card-pulse-ico">⚙</span>
+              <span>OPERATOR PROFILE &amp; HUD SETTINGS</span>
+            </div>
+            <form id="settingsForm" class="settings-form">
+              <label>Operator Name
+                <input type="text" id="cfgUserName" class="hud-input" />
+              </label>
+              <div class="form-row-2">
+                <label>City
+                  <input type="text" id="cfgCity" class="hud-input" />
+                </label>
+                <label>Country
+                  <input type="text" id="cfgCountry" class="hud-input" />
+                </label>
+              </div>
+              <div class="form-row-2">
+                <label>Latitude
+                  <input type="number" step="0.0001" id="cfgLat" class="hud-input" />
+                </label>
+                <label>Longitude
+                  <input type="number" step="0.0001" id="cfgLon" class="hud-input" />
+                </label>
+              </div>
+              <label>HUD Quote / Tagline
+                <input type="text" id="cfgQuote" class="hud-input" />
+              </label>
+              <label class="hud-check">
+                <input type="checkbox" id="cfgVoiceEnabled" /> Enable J.A.R.V.I.S. Voice Synthesis (TTS)
+              </label>
+              <label class="hud-check">
+                <input type="checkbox" id="cfgWakeWordEnabled" /> Continuous Wake-Word Listening ("Hey Jarvis")
+              </label>
+              <button type="submit" class="hud-btn">Save Profile</button>
+            </form>
+          </div>
+
+          <div class="hud-card">
+            <div class="card-header">
+              <span class="card-pulse-ico">🧠</span>
+              <span>NEURAL AI ENGINE (OPTIONAL LLM)</span>
+            </div>
+            <form id="aiSettingsForm" class="settings-form">
+              <p class="muted-note">
+                J.A.R.V.I.S. works 100% offline with built-in system commands. Optionally connect Gemini or OpenAI for open-ended AI reasoning.
+              </p>
+              <label>AI Provider
+                <select id="cfgAiProvider" class="hud-select full">
+                  <option value="local">Local Built-In NLU (Offline)</option>
+                  <option value="gemini">Google Gemini API</option>
+                  <option value="openai">OpenAI API</option>
+                </select>
+              </label>
+              <label>Model ID
+                <input type="text" id="cfgAiModel" class="hud-input" placeholder="gemini-2.5-flash" />
+              </label>
+              <label>API Key (Stored locally in data/config.json)
+                <input type="password" id="cfgAiKey" class="hud-input" placeholder="Optional API key..." />
+              </label>
+              <button type="submit" class="hud-btn">Update AI Core</button>
+              <div class="save-toast" id="settingsToast"></div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- BOTTOM BAR -->
+    <footer class="hud-footer">
+      <div class="footer-bars left">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="footer-label" id="footerLabel">GAURAV KUMAR &nbsp;•&nbsp; POWERED BY J.A.R.V.I.S.</div>
+      <div class="footer-bars right">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- TODAY'S PLAN MODAL -->
+  <div class="hud-modal hidden" id="planModal">
+    <div class="hud-modal-card hud-card">
+      <div class="card-header">
+        <span>📅 FULL MISSION &amp; TASK PLANNER</span>
+        <button class="hud-btn-sm" id="btnClosePlanModal">✕</button>
+      </div>
+      <ul class="plan-list modal-list" id="modalPlanList"></ul>
+    </div>
+  </div>
+
+  <div class="hud-toast hidden" id="hudToast"></div>
+
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>
