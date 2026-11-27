@@ -352,3 +352,8 @@ if STATIC_DIR.exists():
 @app.get("/")
 def serve_index() -> FileResponse:
     return FileResponse(str(STATIC_DIR / "index.html"))
+
+
+@app.get("/googleeb308016c5d7cffa.html")
+def serve_google_verification() -> FileResponse:
+    return FileResponse(str(STATIC_DIR / "googleeb308016c5d7cffa.html"))
